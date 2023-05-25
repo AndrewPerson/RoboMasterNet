@@ -4,6 +4,7 @@ using System.Reactive.Subjects;
 
 using OpenCvSharp;
 
+using ChassisSpeedStruct = RoboMaster.ChassisSpeed;
 using ChassisPositionStruct = RoboMaster.ChassisPosition;
 using ChassisAttitudeStruct = RoboMaster.ChassisAttitude;
 using ChassisStatusStruct = RoboMaster.ChassisStatus;
@@ -123,6 +124,14 @@ public class RoboMasterClient : IDisposable
                         data with { Data = data.Data[2..] }
                     ));
                 }
+                else
+                {
+                    Console.WriteLine($"Unknown chassis push: {data}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Unknown push: {data}");
             }
         }
     }
@@ -178,11 +187,26 @@ public class RoboMasterClient : IDisposable
 
     public async Task<string> Version() => (await Do("version")).Data[0];
 
-    public async Task SetMode(Mode mode) =>
-        await Do("robot", "mode", mode.GetDescription());
+    public Task SetMode(Mode mode) =>
+        Do("robot", "mode", mode.GetDescription());
 
     public async Task<Mode> GetMode() =>
         EnumExtensions.ParseDescription<Mode>((await Do("robot", "mode", "?")).Data[0]);
+
+    public Task SetSpeed(float forwards, float right, float clockwise) =>
+        Do("chassis", "speed", "x", forwards.ToString(), "y", right.ToString(), "z", clockwise.ToString());
+
+    public Task SetWheelSpeed(float frontRight, float frontLeft, float backRight, float backLeft) =>
+        Do(
+            "chassis", "wheel",
+            "w1", frontRight.ToString(),
+            "w2", frontLeft.ToString(),
+            "w3", backRight.ToString(),
+            "w4", backLeft.ToString()
+        );
+
+    public async Task<ChassisSpeed> GetSpeed() =>
+        ChassisSpeedStruct.Parse(await Do("chassis", "speed", "?"));
 
     /// <summary>
     /// NOTE: This does *not* wait until the robot has finished moving.

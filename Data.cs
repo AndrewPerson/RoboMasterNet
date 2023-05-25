@@ -98,6 +98,26 @@ public record struct ResponseData(string[] Data)
     }
 }
 
+public record struct WheelSpeed(float FrontRight, float FrontLeft, float BackRight, float BackLeft);
+
+public record struct ChassisSpeed(float Z, float X, float Clockwise, WheelSpeed Wheels)
+{
+    public static ChassisSpeed Parse(ResponseData data)
+    {
+        return new ChassisSpeed(
+            Z:         float.Parse(data.Data[0]),
+            X:         float.Parse(data.Data[1]),
+            Clockwise: float.Parse(data.Data[2]),
+            Wheels:    new WheelSpeed(
+                FrontRight: float.Parse(data.Data[3]),
+                FrontLeft:  float.Parse(data.Data[4]),
+                BackRight:  float.Parse(data.Data[5]),
+                BackLeft:   float.Parse(data.Data[6])
+            )
+        );
+    }
+}
+
 public record struct ChassisPosition(float Z, float X, float? Clockwise)
 {
     public static ChassisPosition Parse(ResponseData data)
