@@ -1,69 +1,66 @@
-using System.ComponentModel;
-using System.Reflection;
-
 namespace RoboMaster;
 
 public enum EnabledState
 {
-    [Description("on")]
+    [SerialisedValue("on")]
     On,
-    [Description("off")]
+    [SerialisedValue("off")]
     Off
 }
 
 public enum Mode
 {
-    [Description("chassis_lead")]
+    [SerialisedValue("chassis_lead")]
     ChassisLead,
-    [Description("gimbal_lead")]
+    [SerialisedValue("gimbal_lead")]
     GimbalLead,
-    [Description("free")]
+    [SerialisedValue("free")]
     Free
 }
 
 public enum LEDComp
 {
-    [Description("all")]
+    [SerialisedValue("all")]
     All,
-    [Description("top_all")]
+    [SerialisedValue("top_all")]
     TopAll,
-    [Description("top_right")]
+    [SerialisedValue("top_right")]
     TopRight,
-    [Description("top_left")]
+    [SerialisedValue("top_left")]
     TopLeft,
-    [Description("bottom_all")]
+    [SerialisedValue("bottom_all")]
     BottomAll,
-    [Description("bottom_front")]
+    [SerialisedValue("bottom_front")]
     BottomFront,
-    [Description("bottom_back")]
+    [SerialisedValue("bottom_back")]
     BottomBack,
-    [Description("bottom_left")]
+    [SerialisedValue("bottom_left")]
     BottomLeft,
-    [Description("bottom_right")]
+    [SerialisedValue("bottom_right")]
     BottomRight
 }
 
 public enum LEDEffect
 {
-    [Description("off")]
+    [SerialisedValue("off")]
     Off,
-    [Description("solid")]
+    [SerialisedValue("solid")]
     Solid,
-    [Description("blink")]
+    [SerialisedValue("blink")]
     Blink,
-    [Description("pulse")]
+    [SerialisedValue("pulse")]
     Pulse,
-    [Description("scrolling")]
+    [SerialisedValue("scrolling")]
     Scrolling
 }
 
 public enum GripperStatus
 {
-    [Description("0")]
+    [SerialisedValue("0")]
     Closed,
-    [Description("1")]
+    [SerialisedValue("1")]
     PartiallyOpen,
-    [Description("2")]
+    [SerialisedValue("2")]
     Open
 }
 
@@ -77,31 +74,31 @@ public enum LineType
 
 public enum LineColour
 {
-    [Description("red")]
+    [SerialisedValue("red")]
     Red,
-    [Description("blue")]
+    [SerialisedValue("blue")]
     Blue,
-    [Description("green")]
+    [SerialisedValue("green")]
     Green
 }
 
 public enum MarkerColour
 {
-    [Description("red")]
+    [SerialisedValue("red")]
     Red,
-    [Description("blue")]
+    [SerialisedValue("blue")]
     Blue
 }
 
 public enum VisionProcessing
 {
-    [Description("people")]
+    [SerialisedValue("people")]
     People,
-    [Description("pose")]
+    [SerialisedValue("pose")]
     Pose,
-    [Description("marker")]
+    [SerialisedValue("marker")]
     Marker,
-    [Description("robot")]
+    [SerialisedValue("robot")]
     Robot
 }
 
@@ -114,39 +111,6 @@ public enum MarkerSymbolicData
     RedHeart
 }
 
-public static class EnumExtensions
-{
-    public static string GetDescription(this Enum e)
-    {
-        var attribute =
-            e.GetType()
-                .GetTypeInfo()
-                .GetMember(e.ToString())
-                .FirstOrDefault(member => member.MemberType == MemberTypes.Field)?
-                .GetCustomAttributes(typeof(DescriptionAttribute), false)
-                .SingleOrDefault()
-                as DescriptionAttribute;
-
-        return attribute?.Description ?? e.ToString();
-    }
-
-    public static T ParseDescription<T>(string description) where T : Enum
-    {
-        foreach (var value in Enum.GetValues(typeof(T)))
-        {
-            if (value is T enumValue)
-            {
-                if (enumValue.GetDescription() == description)
-                {
-                    return enumValue;
-                }
-            }
-        }
-
-        throw new ArgumentException($"No enum value with description {description} found.");
-    }
-}
-
 /// <summary>
 /// Used for implicit conversion of primitive data types to the text-based format the robot expects.
 /// i.e. <c>CommandArg arg = 1;</c> will set <c>arg</c> to <c>"1"</c>.
@@ -154,7 +118,7 @@ public static class EnumExtensions
 public record struct CommandArg(string arg)
 {
     public static implicit operator CommandArg(string arg) => new(arg);
-    public static implicit operator CommandArg(Enum arg) => new(arg.GetDescription());
+    public static implicit operator CommandArg(Enum arg) => new(arg.GetSerialisedValue());
     public static implicit operator CommandArg(int arg) => new(arg.ToString());
     public static implicit operator CommandArg(float arg) => new(arg.ToString());
     public static implicit operator CommandArg(bool arg) => new(arg ? "on" : "off");
@@ -175,7 +139,7 @@ public record struct ResponseData(string[] Data)
 
     public T GetEnum<T>(int index) where T : Enum
     {
-        return EnumExtensions.ParseDescription<T>(Data[index]);
+        return EnumExtensions.ParseSerialisedValue<T>(Data[index]);
     }
 
     public int GetInt(int index)
