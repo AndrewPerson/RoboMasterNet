@@ -57,6 +57,16 @@ public enum LEDEffect
     Scrolling
 }
 
+public enum GripperStatus
+{
+    [Description("0")]
+    Closed,
+    [Description("1")]
+    PartiallyOpen,
+    [Description("2")]
+    Open
+}
+
 public enum LineType
 {
     None,
@@ -137,6 +147,10 @@ public static class EnumExtensions
     }
 }
 
+/// <summary>
+/// Used for implicit conversion of primitive data types to the text-based format the robot expects.
+/// i.e. <c>CommandArg arg = 1;</c> will set <c>arg</c> to <c>"1"</c>.
+/// </summary>
 public record struct CommandArg(string arg)
 {
     public static implicit operator CommandArg(string arg) => new(arg);
@@ -153,6 +167,31 @@ public record struct ResponseData(string[] Data)
         var parts = data.TrimEnd(';').Split(' ');
         return new ResponseData(parts);
     }
+
+    public string GetString(int index)
+    {
+        return Data[index];
+    }
+
+    public T GetEnum<T>(int index) where T : Enum
+    {
+        return EnumExtensions.ParseDescription<T>(Data[index]);
+    }
+
+    public int GetInt(int index)
+    {
+        return int.Parse(Data[index]);
+    }
+
+    public float GetFloat(int index)
+    {
+        return float.Parse(Data[index]);
+    }
+
+    public bool GetBool(int index)
+    {
+        return Data[index] != "0";
+    }
 }
 
 public record struct WheelSpeed(float FrontRight, float FrontLeft, float BackRight, float BackLeft);
@@ -162,14 +201,14 @@ public record struct ChassisSpeed(float Z, float X, float Clockwise, WheelSpeed 
     public static ChassisSpeed Parse(ResponseData data)
     {
         return new ChassisSpeed(
-            Z:         float.Parse(data.Data[0]),
-            X:         float.Parse(data.Data[1]),
-            Clockwise: float.Parse(data.Data[2]),
+            Z:         data.GetFloat(0),
+            X:         data.GetFloat(1),
+            Clockwise: data.GetFloat(2),
             Wheels:    new WheelSpeed(
-                FrontRight: float.Parse(data.Data[3]),
-                FrontLeft:  float.Parse(data.Data[4]),
-                BackRight:  float.Parse(data.Data[5]),
-                BackLeft:   float.Parse(data.Data[6])
+                FrontRight: data.GetFloat(3),
+                FrontLeft:  data.GetFloat(4),
+                BackRight:  data.GetFloat(5),
+                BackLeft:   data.GetFloat(6)
             )
         );
     }
@@ -180,9 +219,9 @@ public record struct ChassisPosition(float Z, float X, float? Clockwise)
     public static ChassisPosition Parse(ResponseData data)
     {
         return new ChassisPosition(
-            Z: float.Parse(data.Data[0]),
-            X: float.Parse(data.Data[1]),
-            Clockwise: data.Data.Length == 3 ? float.Parse(data.Data[2]) : null
+            Z: data.GetFloat(0),
+            X: data.GetFloat(1),
+            Clockwise: data.Data.Length == 3 ? data.GetFloat(2) : null
         );
     }
 }
@@ -192,9 +231,9 @@ public record struct ChassisAttitude(float Pitch, float Roll, float Yaw)
     public static ChassisAttitude Parse(ResponseData data)
     {
         return new ChassisAttitude(
-            Pitch: float.Parse(data.Data[0]),
-            Roll:  float.Parse(data.Data[1]),
-            Yaw:   float.Parse(data.Data[2])
+            Pitch: data.GetFloat(0),
+            Roll:  data.GetFloat(1),
+            Yaw:   data.GetFloat(2)
         );
     }
 }
@@ -205,17 +244,17 @@ public record struct ChassisStatus(bool Static, bool UpHill, bool DownHill, bool
     public static ChassisStatus Parse(ResponseData data)
     {
         return new ChassisStatus(
-            Static:     int.Parse(data.Data[0]) != 0,
-            UpHill:     int.Parse(data.Data[1]) != 0,
-            DownHill:   int.Parse(data.Data[2]) != 0,
-            OnSlope:    int.Parse(data.Data[3]) != 0,
-            PickUp:     int.Parse(data.Data[4]) != 0,
-            Slip:       int.Parse(data.Data[5]) != 0,
-            ImpactX:    int.Parse(data.Data[6]) != 0,
-            ImpactY:    int.Parse(data.Data[7]) != 0,
-            ImpactZ:    int.Parse(data.Data[8]) != 0,
-            RollOver:   int.Parse(data.Data[9]) != 0,
-            HillStatic: int.Parse(data.Data[10]) != 0
+            Static:     data.GetBool(0),
+            UpHill:     data.GetBool(1),
+            DownHill:   data.GetBool(2),
+            OnSlope:    data.GetBool(3),
+            PickUp:     data.GetBool(4),
+            Slip:       data.GetBool(5),
+            ImpactX:    data.GetBool(6),
+            ImpactY:    data.GetBool(7),
+            ImpactZ:    data.GetBool(8),
+            RollOver:   data.GetBool(9),
+            HillStatic: data.GetBool(10)
         );
     }
 }
@@ -224,9 +263,9 @@ public record struct Line(LineType Type, Point[] Points)
 {
     public static Line Parse(ResponseData data)
     {
-        var pointCount = int.Parse(data.Data[0]);
+        var pointCount = (data.Data.Length - 1) / 4;
 
-        var lineType = int.Parse(data.Data[1]) switch
+        var lineType = data.GetInt(0) switch
         {
             0 => LineType.None,
             1 => LineType.Straight,
@@ -237,13 +276,13 @@ public record struct Line(LineType Type, Point[] Points)
 
         var points = new Point[pointCount];
 
-        for (var i = 0; i < points.Length; i++)
+        for (var i = 0; i < pointCount; i++)
         {
             points[i] = new Point(
-                X:         int.Parse(data.Data[i * 4 + 2]),
-                Y:         int.Parse(data.Data[i * 4 + 3]),
-                Tangent:   int.Parse(data.Data[i * 4 + 4]),
-                Curvature: int.Parse(data.Data[i * 4 + 5])
+                X:         data.GetFloat(i * 4 + 1),
+                Y:         data.GetFloat(i * 4 + 2),
+                Tangent:   data.GetFloat(i * 4 + 3),
+                Curvature: data.GetFloat(i * 4 + 4)
             );
         }
 
@@ -251,10 +290,56 @@ public record struct Line(LineType Type, Point[] Points)
     }
 }
 
-public record struct Point(int X, int Y, int Tangent, int Curvature);
+public record struct Point(float X, float Y, float Tangent, float Curvature);
 
+/// <summary>
+/// Represents a single marker data point.
 public record struct MarkerData
 {
+
+    public bool IsSymbolic => symbolicData != null;
+    public bool IsInt => intData != null;
+    public bool IsChar => charData != null;
+
+    public MarkerSymbolicData Symbol
+    {
+        get
+        {
+            if (symbolicData == null)
+            {
+                throw new InvalidOperationException("Marker data is not symbolic");
+            }
+
+            return symbolicData.Value;
+        }
+    }
+
+    public int Int
+    {
+        get
+        {
+            if (intData == null)
+            {
+                throw new InvalidOperationException("Marker data is not an int");
+            }
+
+            return intData.Value;
+        }
+    }
+
+    public char Char
+    {
+        get
+        {
+            if (charData == null)
+            {
+                throw new InvalidOperationException("Marker data is not a char");
+            }
+
+            return charData.Value;
+        }
+    }
+
     private MarkerSymbolicData? symbolicData;
     private int? intData;
     private char? charData;
@@ -298,27 +383,23 @@ public record struct MarkerData
     public static implicit operator MarkerData(MarkerSymbolicData symbolicData) => new(symbolicData);
     public static implicit operator MarkerData(int intData) => new(intData);
     public static implicit operator MarkerData(char charData) => new(charData);
-
-    public static implicit operator MarkerSymbolicData?(MarkerData data) => data.symbolicData;
-    public static implicit operator int?(MarkerData data) => data.intData;
-    public static implicit operator char?(MarkerData data) => data.charData;
 }
 
 public record Marker(MarkerData Data, int X, int Y, int Width, int Height)
 {
     public static Marker[] ParseMultiple(ResponseData data)
     {
-        var markerCount = int.Parse(data.Data[0]);
+        var markerCount = data.GetInt(0);
         var markers = new Marker[markerCount];
 
         for (var i = 0; i < markers.Length; i++)
         {
             markers[i] = new Marker(
-                Data:   MarkerData.FromCode(int.Parse(data.Data[i * 5 + 1])),
-                X:      int.Parse(data.Data[i * 5 + 2]),
-                Y:      int.Parse(data.Data[i * 5 + 3]),
-                Width:  int.Parse(data.Data[i * 5 + 4]),
-                Height: int.Parse(data.Data[i * 5 + 5])
+                Data:   MarkerData.FromCode(data.GetInt(i * 5 + 1)),
+                X:      data.GetInt(i * 5 + 2),
+                Y:      data.GetInt(i * 5 + 3),
+                Width:  data.GetInt(i * 5 + 4),
+                Height: data.GetInt(i * 5 + 5)
             );
         }
 
