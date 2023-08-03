@@ -32,6 +32,9 @@ public class RoboMasterClient : IDisposable
     private string ip;
     private TcpClient client;
 
+    private object videoThreadLock = new();
+    private Thread? videoThread;
+
     private AsyncQueue<(string, TaskCompletionSource<ResponseData>, CancellationToken?)> commandQueue = new();
 
     public static async Task<RoboMasterClient> Connect(string ip, int timeout = 5000)
@@ -76,10 +79,6 @@ public class RoboMasterClient : IDisposable
             else Console.WriteLine($"Unknown push: {data}");
         });
 
-        // var videoThread = new Thread(ListenForVideo);
-        // videoThread.IsBackground = true;
-        // videoThread.Start();
-
         var commandDispatcherThread = new Thread(DispatchCommands);
         commandDispatcherThread.IsBackground = true;
         commandDispatcherThread.Start();
@@ -110,17 +109,15 @@ public class RoboMasterClient : IDisposable
         }
     }
 
-    private async void ListenForVideo()
+    private void ListenForVideo()
     {
-        Console.WriteLine("Starting video cap!");
         videoCapture = new VideoCapture($"tcp://{ip}:{VIDEO_PORT}");
-        Console.WriteLine(videoCapture.IsOpened());
         videoCapture.Set(VideoCaptureProperties.BufferSize, 4);
 
         while (true)
         {
             var mat = new Mat();
-            Console.WriteLine(await Task.Run(() => videoCapture.Read(mat)));
+            videoCapture.Read(mat);
             Video.Notify(mat);
 
             mat.Dispose();
@@ -280,8 +277,31 @@ public class RoboMasterClient : IDisposable
             "effect", effect
         );
 
-    public async Task SetVideoPushEnabled(bool enabled = true, CancellationToken? cancellationToken = null) =>
+    public async Task SetVideoPushEnabled(bool enabled = true, CancellationToken? cancellationToken = null)
+    {
         await Do(cancellationToken, "stream", enabled ? EnabledState.On : EnabledState.Off);
+        
+        if (enabled)
+        {
+            lock (videoThreadLock)
+            {
+                if (videoThread == null)
+                {
+                    videoThread = new Thread(ListenForVideo);
+                    videoThread.IsBackground = true;
+                    videoThread.Start();
+                }
+            }
+        }
+        else
+        {
+            lock (videoThreadLock)
+            {
+                videoThread?.Interrupt();
+                videoThread = null;
+            }
+        }
+    }
 
     public async Task SetIrEnabled(bool enabled = true, CancellationToken? cancellationToken = null) =>
         await Do(cancellationToken, "ir_distance_sensor", "measure", enabled ? EnabledState.On : EnabledState.Off);
