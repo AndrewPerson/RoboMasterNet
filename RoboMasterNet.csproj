@@ -4,7 +4,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PackageId>RoboMaster.NET</PackageId>
-        <Version>1.0.1</Version>
+        <Version>1.0.2</Version>
         <Authors>AP2</Authors>
         <Company>AP2</Company>
         <PackageProjectURL>https://github.com/AndrewPerson/RoboMasterNet</PackageProjectURL>
