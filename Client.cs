@@ -76,9 +76,9 @@ public class RoboMasterClient : IDisposable
             else Console.WriteLine($"Unknown push: {data}");
         });
 
-        var videoThread = new Thread(ListenForVideo);
-        videoThread.IsBackground = true;
-        videoThread.Start();
+        // var videoThread = new Thread(ListenForVideo);
+        // videoThread.IsBackground = true;
+        // videoThread.Start();
 
         var commandDispatcherThread = new Thread(DispatchCommands);
         commandDispatcherThread.IsBackground = true;
