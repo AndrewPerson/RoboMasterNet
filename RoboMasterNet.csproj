@@ -4,7 +4,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PackageId>RoboMaster.NET</PackageId>
-        <Version>1.0.2</Version>
+        <Version>1.0.3</Version>
         <Authors>AP2</Authors>
         <Company>AP2</Company>
         <PackageProjectURL>https://github.com/AndrewPerson/RoboMasterNet</PackageProjectURL>
@@ -14,11 +14,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentFTP" Version="46.0.2" />
         <PackageReference Include="OpenCvSharp4" Version="4.7.0.20230115" />
         <PackageReference Include="OpenCvSharp4_.runtime.ubuntu.20.04-x64" Version="4.7.0.20230115" />
         <PackageReference Include="System.Linq.Async" Version="6.0.1" />
         <PackageReference Include="System.Reactive" Version="6.0.0" />
-        <None Include="README.md" Pack="true" PackagePath="/"/>
+        <None Include="README.md" Pack="true" PackagePath="/" />
     </ItemGroup>
 </Project>
