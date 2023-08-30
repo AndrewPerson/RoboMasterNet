@@ -37,7 +37,9 @@ public class RoboMasterClient : IDisposable
 
     private AsyncQueue<(string, TaskCompletionSource<ResponseData>, CancellationToken?)> commandQueue = new();
 
-    public static async Task<RoboMasterClient> Connect(string ip, int timeout = 5000)
+    private ILogger? logger;
+
+    public static async Task<RoboMasterClient> Connect(string ip, int timeout = 5000, ILogger? logger = null)
     {
         var client = new TcpClient();
 
@@ -47,13 +49,14 @@ public class RoboMasterClient : IDisposable
 
         cancellationTokenSource.Dispose();
 
-        return new RoboMasterClient(ip, client);
+        return new RoboMasterClient(ip, client, logger);
     }
 
-    private RoboMasterClient(string ip, TcpClient client)
+    private RoboMasterClient(string ip, TcpClient client, ILogger? logger = null)
     {
         this.ip = ip;
         this.client = client;
+        this.logger = logger;
 
         commandQueue.Enqueue(("command;", new TaskCompletionSource<ResponseData>(), null));
 
@@ -68,15 +71,15 @@ public class RoboMasterClient : IDisposable
                 if (subject == "position") ChassisPosition.Notify(RoboMaster.ChassisPosition.Parse(parseData));
                 else if (subject == "attitude") ChassisAttitude.Notify(RoboMaster.ChassisAttitude.Parse(parseData));
                 else if (subject == "status") ChassisStatus.Notify(RoboMaster.ChassisStatus.Parse(parseData));
-                else Console.WriteLine($"Unknown chassis push: {data}");
+                else logger?.LogWarning($"Unknown chassis push: {data}");
             }
             else if (topic == "AI")
             {
                 if (subject == "line") Line.Notify(RoboMaster.Line.Parse(parseData));
                 else if (subject == "marker") Markers.Notify(Marker.ParseMultiple(parseData));
-                else Console.WriteLine($"Unknown AI push: {data}");
+                else logger?.LogWarning($"Unknown AI push: {data}");
             }
-            else Console.WriteLine($"Unknown push: {data}");
+            else logger?.LogWarning($"Unknown push: {data}");
         });
 
         var commandDispatcherThread = new Thread(DispatchCommands);
@@ -130,7 +133,7 @@ public class RoboMasterClient : IDisposable
     /// </summary>
     private async Task<ResponseData> DoUnsafe(string command)
     {
-        Console.WriteLine(command);
+        logger?.LogInfo(command);
 
         var stream = client.GetStream();
 
@@ -146,7 +149,7 @@ public class RoboMasterClient : IDisposable
         }
         while (!response.EndsWith(";"));
 
-        Console.WriteLine(response);
+        logger?.LogInfo(response);
 
         return ResponseData.Parse(response);
     }
