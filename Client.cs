@@ -22,14 +22,14 @@ public class RoboMasterClient : IDisposable
     public Feed<Line> Line { get; } = new ();
     public Feed<Marker[]> Markers { get; } = new();
 
-    private PushReceiver pushReceiver = new(PUSH_PORT);
+    private readonly PushReceiver pushReceiver = new(PUSH_PORT);
 
-    private string ip;
-    private TcpClient client;
+    private readonly string ip;
+    private readonly TcpClient client;
 
-    private AsyncQueue<(string, TaskCompletionSource<ResponseData>, CancellationToken?)> commandQueue = new();
+    private readonly AsyncQueue<(string, TaskCompletionSource<ResponseData>, CancellationToken?)> commandQueue = new();
 
-    private ILogger? logger;
+    private readonly ILogger? logger;
 
     public static async Task<RoboMasterClient> Connect(string ip, int timeout = 5000, ILogger? logger = null)
     {
@@ -74,9 +74,10 @@ public class RoboMasterClient : IDisposable
             else logger?.LogWarning($"Unknown push: {data}");
         });
 
-        var commandDispatcherThread = new Thread(DispatchCommands);
-        commandDispatcherThread.IsBackground = true;
-        commandDispatcherThread.Start();
+        new Thread(DispatchCommands)
+        {
+            IsBackground = true
+        }.Start();
     }
 
     public void Dispose()
@@ -84,6 +85,8 @@ public class RoboMasterClient : IDisposable
         client.Dispose();
 
         pushReceiver.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 
     private async void DispatchCommands()
@@ -135,7 +138,7 @@ public class RoboMasterClient : IDisposable
     {
         var resultSource = new TaskCompletionSource<ResponseData>();
 
-        var command = string.Join(" ", args.Select(arg => arg.arg)) + ";";
+        var command = string.Join(" ", args.Select(arg => arg.Arg)) + ";";
 
         commandQueue.Enqueue((command, resultSource, cancellationToken));
         return await resultSource.Task;

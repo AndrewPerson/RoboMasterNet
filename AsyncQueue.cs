@@ -4,8 +4,8 @@ namespace RoboMaster;
 
 public class AsyncQueue<T> : IAsyncEnumerable<T>
 {
-    private readonly SemaphoreSlim _enumerationSemaphore = new SemaphoreSlim(1);
-    private readonly BufferBlock<T> _bufferBlock = new BufferBlock<T>();
+    private readonly SemaphoreSlim _enumerationSemaphore = new(1);
+    private readonly BufferBlock<T> _bufferBlock = new();
 
     public void Enqueue(T item) => _bufferBlock.Post(item);
 
@@ -14,7 +14,7 @@ public class AsyncQueue<T> : IAsyncEnumerable<T>
         // We lock this so we only ever enumerate once at a time.
         // That way we ensure all items are returned in a continuous
         // fashion with no 'holes' in the data when two foreach compete.
-        await _enumerationSemaphore.WaitAsync();
+        await _enumerationSemaphore.WaitAsync(token);
 
         try
         {

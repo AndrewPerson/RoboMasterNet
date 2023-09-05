@@ -115,7 +115,7 @@ public enum MarkerSymbolicData
 /// Used for implicit conversion of primitive data types to the text-based format the robot expects.
 /// i.e. <c>CommandArg arg = 1;</c> will set <c>arg</c> to <c>"1"</c>.
 /// </summary>
-public record struct CommandArg(string arg)
+public record struct CommandArg(string Arg)
 {
     public static implicit operator CommandArg(string arg) => new(arg);
     public static implicit operator CommandArg(Enum arg) => new(arg.GetSerialisedValue());
@@ -132,27 +132,27 @@ public record struct ResponseData(string[] Data)
         return new ResponseData(parts);
     }
 
-    public string GetString(int index)
+    public readonly string GetString(int index)
     {
         return Data[index];
     }
 
-    public T GetEnum<T>(int index) where T : Enum
+    public readonly T GetEnum<T>(int index) where T : Enum
     {
         return EnumExtensions.ParseSerialisedValue<T>(Data[index]);
     }
 
-    public int GetInt(int index)
+    public readonly int GetInt(int index)
     {
         return int.Parse(Data[index]);
     }
 
-    public float GetFloat(int index)
+    public readonly float GetFloat(int index)
     {
         return float.Parse(Data[index]);
     }
 
-    public bool GetBool(int index)
+    public readonly bool GetBool(int index)
     {
         return Data[index] != "0";
     }
@@ -235,7 +235,7 @@ public record struct Line(LineType Type, Point[] Points)
             1 => LineType.Straight,
             2 => LineType.Fork,
             3 => LineType.Intersection,
-            _ => throw new ArgumentOutOfRangeException()
+            _ => throw new ArgumentOutOfRangeException(nameof(data), data, "Invalid line type")
         };
 
         var points = new Point[pointCount];
@@ -261,11 +261,11 @@ public record struct Point(float X, float Y, float Tangent, float Curvature);
 public record struct MarkerData
 {
 
-    public bool IsSymbolic => symbolicData != null;
-    public bool IsInt => intData != null;
-    public bool IsChar => charData != null;
+    public readonly bool IsSymbolic => symbolicData != null;
+    public readonly bool IsInt => intData != null;
+    public readonly bool IsChar => charData != null;
 
-    public MarkerSymbolicData Symbol
+    public readonly MarkerSymbolicData Symbol
     {
         get
         {
@@ -278,7 +278,7 @@ public record struct MarkerData
         }
     }
 
-    public int Int
+    public readonly int Int
     {
         get
         {
@@ -291,7 +291,7 @@ public record struct MarkerData
         }
     }
 
-    public char Char
+    public readonly char Char
     {
         get
         {
@@ -304,28 +304,28 @@ public record struct MarkerData
         }
     }
 
-    private MarkerSymbolicData? symbolicData;
-    private int? intData;
-    private char? charData;
+    private readonly MarkerSymbolicData? symbolicData;
+    private readonly int? intData;
+    private readonly char? charData;
 
     private MarkerData(MarkerSymbolicData symbolicData)
     {
         this.symbolicData = symbolicData;
-        this.intData = null;
-        this.charData = null;
+        intData = null;
+        charData = null;
     }
 
     private MarkerData(int intData)
     {
-        this.symbolicData = null;
+        symbolicData = null;
         this.intData = intData;
-        this.charData = null;
+        charData = null;
     }
 
     private MarkerData(char charData)
     {
-        this.symbolicData = null;
-        this.intData = null;
+        symbolicData = null;
+        intData = null;
         this.charData = charData;
     }
 

@@ -18,9 +18,10 @@ public class PushReceiver : IDisposable
 
         Client = new UdpClient(port);
 
-        var receiveThread = new Thread(ReceiveLoop);
-        receiveThread.IsBackground = true;
-        receiveThread.Start();
+        new Thread(ReceiveLoop)
+        {
+            IsBackground = true
+        }.Start();
     }
 
     private void ReceiveLoop()
@@ -39,5 +40,6 @@ public class PushReceiver : IDisposable
     public void Dispose()
     {
         Client.Dispose();
+        GC.SuppressFinalize(this);
     }    
 }
