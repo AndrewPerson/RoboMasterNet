@@ -223,22 +223,22 @@ public class RoboMasterClient : IDisposable
         var positionArgs = positionFreq switch
         {
             null => new List<CommandArg>(),
-            0 => new List<CommandArg> { "position", EnabledState.Off },
-            int freq => new List<CommandArg> { "position", EnabledState.On, "pfreq", freq }
+            0 => new List<CommandArg> { "position", false },
+            int freq => new List<CommandArg> { "position", true, "pfreq", freq }
         };
 
         var attitudeArgs = attitudeFreq switch
         {
             null => new List<CommandArg>(),
-            0 => new List<CommandArg> { "attitude", EnabledState.Off },
-            int freq => new List<CommandArg> { "attitude", EnabledState.On, "afreq", freq }
+            0 => new List<CommandArg> { "attitude", false },
+            int freq => new List<CommandArg> { "attitude", true, "afreq", freq }
         };
 
         var statusArgs = statusFreq switch
         {
             null => new List<CommandArg>(),
-            0 => new List<CommandArg> { "status", EnabledState.Off },
-            int freq => new List<CommandArg> { "status", EnabledState.On, "sfreq", freq }
+            0 => new List<CommandArg> { "status", false },
+            int freq => new List<CommandArg> { "status", true, "sfreq", freq }
         };
 
         var args = new List<CommandArg> { "chassis", "push" };
@@ -259,7 +259,7 @@ public class RoboMasterClient : IDisposable
         );
 
     public async Task SetIrEnabled(bool enabled = true, CancellationToken? cancellationToken = null) =>
-        await Do(cancellationToken, "ir_distance_sensor", "measure", enabled ? EnabledState.On : EnabledState.Off);
+        await Do(cancellationToken, "ir_distance_sensor", "measure", enabled);
 
     public async Task<float> GetIRDistance(int irId, CancellationToken? cancellationToken = null)
     {
@@ -303,7 +303,7 @@ public class RoboMasterClient : IDisposable
         await Do(cancellationToken, "AI", "attribute", "line_color", lineColour);
 
     public async Task SetLineRecognitionEnabled(bool enabled = true, CancellationToken? cancellationToken = null) =>
-        await Do(cancellationToken, "AI", "push", "line", enabled ? EnabledState.On : EnabledState.Off);
+        await Do(cancellationToken, "AI", "push", "line", enabled);
 
     public async Task SetMarkerRecognitionColour(MarkerColour markerColour, CancellationToken? cancellationToken = null) =>
         await Do(cancellationToken, "AI", "attribute", "marker_color", markerColour);
@@ -318,11 +318,11 @@ public class RoboMasterClient : IDisposable
             (
                 cancellationToken,
                 "AI", "push",
-                VisionProcessing.Marker, EnabledState.Off,
-                VisionProcessing.People, EnabledState.Off,
-                VisionProcessing.Pose,   EnabledState.Off,
-                VisionProcessing.Robot,  EnabledState.Off
+                VisionProcessing.Marker, false,
+                VisionProcessing.People, false,
+                VisionProcessing.Pose,   false,
+                VisionProcessing.Robot,  false
             );
-        else await Do(cancellationToken, "AI", "push", processing.Value, EnabledState.On);
+        else await Do(cancellationToken, "AI", "push", processing.Value, true);
     }
 }

@@ -1,13 +1,5 @@
 namespace RoboMaster;
 
-public enum EnabledState
-{
-    [SerialisedValue("on")]
-    On,
-    [SerialisedValue("off")]
-    Off
-}
-
 public enum Mode
 {
     [SerialisedValue("chassis_lead")]
